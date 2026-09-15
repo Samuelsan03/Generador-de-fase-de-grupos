@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Fase de Grupos</title>
+    <!-- ✅ NUEVO: Librería html2canvas para exportar como imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, 'Microsoft YaHei', 'Hiragino Sans', sans-serif; /* Added font support for CJK */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-light);
+        }
+
+        /* Language Selector Style */
+        .lang-selector-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        
+        select#langSelector {
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        select#langSelector:focus {
+            outline: 2px solid var(--primary);
+        }
+
+        /* Layout Principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 350px 1fr;
+                align-items: start;
+            }
+        }
+
+        /* Panel de Control */
+        .control-panel {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .counter-badge {
+            background-color: #eff6ff;
+            color: var(--primary);
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #bfdbfe;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 0.95rem;
+        }
+
+        textarea:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        /* Botones */
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+
+        .btn-secondary { background-color: var(--secondary); color: white; }
+        .btn-secondary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .btn-outline { background-color: transparent; border: 2px solid var(--secondary); color: var(--secondary); }
+        .btn-outline:hover { background-color: var(--secondary); color: white; }
+        
+        /* Estilos específicos para botones de archivo */
+        .btn-file-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-save { background-color: var(--success); color: white; font-size: 0.9rem; }
+        .btn-save:hover { background-color: #059669; transform: translateY(-1px); }
+        
+        .btn-load { background-color: white; border: 2px solid var(--primary); color: var(--primary); font-size: 0.9rem; }
+        .btn-load:hover { background-color: #eff6ff; transform: translateY(-1px); }
+
+        /* ✅ NUEVO: Estilos para exportación de imagen */
+        .image-export-group {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .image-export-group label {
+            font-size: 0.9rem;
+        }
+
+        select#imageFormat {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+        }
+        select#imageFormat:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+
+        .btn-image {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 0.9rem;
+            width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+        }
+        .btn-image:hover {
+            box-shadow: 0 6px 8px -1px rgba(245, 158, 11, 0.45);
+            transform: translateY(-1px);
+        }
+        .btn-image:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Área de Resultados */
+        .results-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Header de resultados */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-championship {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+        .btn-championship:hover {
+            box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
+        }
+        .btn-championship.active {
+            background: #4b5563; /* Gris cuando está activo */
+            box-shadow: none;
+        }
+
+        /* Notificaciones */
+        .notification {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease;
+        }
+        .notification.warning { background-color: #fffbeb; border: 1px solid #fcd34d; color: #92400e; display: block; }
+        .notification.info { background-color: #eff6ff; border: 1px solid #93c5fd; color: #1e40af; display: block; }
+        .notification.success { background-color: #f0fdf4; border: 1px solid #86efac; color: #166534; display: block; }
+
+        /* LEYENDA NUEVA */
+        .championship-legend {
+            display: none; /* Oculto por defecto */
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .championship-legend strong {
+            color: var(--primary);
+        }
+
+        /* Mostrar leyenda solo cuando el modo esté activo en el body */
+        .mode-championship-active .championship-legend {
+            display: block;
+        }
+
+        /* Grupos */
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .group-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-top: 5px solid transparent; 
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .group-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+        .group-header {
+            padding: 1rem;
+            background: rgba(0,0,0,0.03);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .group-title { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; flex-grow: 1; }
+
+        /* Input de color */
+        .color-picker-wrapper { display: flex; align-items: center; margin-left: 10px; }
+
+        input[type="color"] {
+            -webkit-appearance: none; border: none; width: 32px; height: 32px; cursor: pointer;
+            background: none; padding: 0; border-radius: 50%; overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid white; border-radius: 50%; }
+        input[type="color"]:hover { transform: scale(1.1); }
+
+        /* Wrapper para Scroll Horizontal en Tablas */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 250px; }
+        th, td { padding: 0.75rem 1rem; text-align: left; }
+        th { font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); font-weight: 600; background-color: rgba(0,0,0,0.02); white-space: nowrap; }
+        td { border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        tr:last-child td { border-bottom: none; }
+        
+        .player-name { 
+            font-weight: 500; 
+            white-space: nowrap;
+        }
+
+        /* Estilos para Modo Partido */
+        .championship-header { display: none; }
+        
+        .championship-col {
+            display: none; /* Oculto por defecto */
+            width: 50px;
+            text-align: center;
+            padding: 0.5rem !important;
+            white-space: nowrap;
+        }
+
+        /* Cuando el modo está activo, mostrar columnas */
+        .mode-championship .championship-header,
+        .mode-championship .championship-col {
+            display: table-cell;
+        }
+
+        /* Selectores de resultado pequeños */
+        .result-select {
+            width: 100%;
+            padding: 2px 5px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: center;
+            background-color: white;
+        }
+        .result-select:focus { outline: none; border-color: var(--primary); }
+
+        .total-pts {
+            font-weight: 800;
+            color: var(--primary);
+            text-align: center !important;
+            font-size: 1.1rem;
+        }
+
+        .empty-state {
+            text-align: center; padding: 3rem; color: var(--text-light);
+            background: white; border-radius: 12px; border: 2px dashed var(--border-color);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- Language Selector -->
+        <div class="lang-selector-container">
+            <select id="langSelector">
+                <option value="es">🇪🇸 Español</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="zh">🇨🇳 中文</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="ko">🇰🇷 한국어</option>
+            </select>
+        </div>
+
+        <h1 data-i18n="app_title">🏆 Generador de Fase de Grupos</h1>
+        <p class="subtitle" data-i18n="app_subtitle">Pega, mezcla, genera, personaliza colores, guarda y juega los partidos.</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- Panel Izquierdo: Configuración -->
+        <aside class="control-panel">
+            <div class="form-group">
+                <label for="participantsInput" data-i18n="label_participants">Lista de Participantes</label>
+                <div class="input-header">
+                    <small style="color: var(--text-light);" data-i18n="hint_participants">Un participante por línea.</small>
+                    <span class="counter-badge">Total: <span id="liveCount">0</span></span>
+                </div>
+                <textarea id="participantsInput" data-i18n-placeholder="placeholder_participants" placeholder="Pega aquí la lista...&#10;Jugador 1&#10;Jugador 2&#10;Jugador 3&#10;..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="groupSize" data-i18n="label_group_size">Participantes por Grupo</label>
+                <input type="number" id="groupSize" value="4" min="2" max="10">
+            </div>
+
+            <div class="btn-container">
+                <button class="btn-outline" id="btnShuffle" data-i18n="btn_shuffle" title="Mezcla el orden de la lista actual">
+                    🔀 Mezcla (Sortear)
+                </button>
+                <button class="btn-primary" id="btnGenerate" data-i18n="btn_generate">
+                    ✨ Crear Grupos
+                </button>
+                <button class="btn-secondary" id="btnReset" style="font-size: 0.9rem;" data-i18n="btn_reset">
+                    Limpiar Todo
+                </button>
+            </div>
+
+            <!-- Botones de Guardado y Carga -->
+            <div class="btn-file-group">
+                <button class="btn-save" id="btnSave" data-i18n="btn_save" title="Descarga un archivo con el progreso">
+                    💾 Guardar
+                </button>
+                <button class="btn-load" id="btnLoad" data-i18n="btn_load" title="Sube un archivo guardado">
+                    📂 Cargar
+                </button>
+            </div>
+
+            <!-- ✅ NUEVO: Botón y selector para exportar imagen -->
+            <div class="image-export-group">
+                <label for="imageFormat" data-i18n="label_image_format">Formato de Imagen</label>
+                <select id="imageFormat">
+                    <option value="png">PNG (.png)</option>
+                    <option value="jpeg">JPEG (.jpg)</option>
+                    <option value="webp">WEBP (.webp)</option>
+                </select>
+                <button class="btn-image" id="btnExportImage" data-i18n="btn_export_image" title="Exporta la fase de grupos como imagen">
+                    📸 Exportar Imagen
+                </button>
+            </div>
+
+            <!-- Input oculto para archivo -->
+            <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+        </aside>
+
+        <!-- Panel Derecho: Resultados -->
+        <main class="results-area" id="resultsArea">
+            
+            <!-- Nuevo Botón de Modo Partido -->
+            <div class="results-header">
+                <div id="notificationArea" style="flex-grow: 1;"></div>
+                <button class="btn-championship" id="btnChampionshipMode" style="margin-left: 1rem; display: none;" data-i18n="btn_champ_mode">
+                    🏟️ Modo Partido
+                </button>
+            </div>
+
+            <!-- Nueva Leyenda para Guía de Usuario -->
+            <div id="championshipLegend" class="championship-legend">
+                📝 <strong data-i18n="legend_title">Guía de Resultados:</strong> <span data-i18n="legend_text">G = Ganar (3 pts) | E = Empatar (1 pt) | P = Perder (0 pts)</span>
+            </div>
+
+            <div id="groupsContainer" class="groups-grid">
+                <div class="empty-state">
+                    <h3 data-i18n="empty_title">Aquí aparecerán los grupos</h3>
+                    <p data-i18n="empty_msg">Ingresa los datos y presiona "Crear Grupos".</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ===========================
+        // CONFIGURACIÓN DE IDIOMAS
+        // ===========================
+        let currentLang = 'es';
+
+        // Diccionario de traducciones
+        // Puedes agregar más idiomas siguiendo este formato (ej: 'fr': { ... })
+        const translations = {
+            es: {
+                app_title: "🏆 Generador de Fase de Grupos",
+                app_subtitle: "Pega, mezcla, genera, personaliza colores, guarda y juega los partidos.",
+                label_participants: "Lista de Participantes",
+                hint_participants: "Un participante por línea.",
+                placeholder_participants: "Pega aquí la lista...\nJugador 1\nJugador 2\nJugador 3\n...",
+                label_group_size: "Participantes por Grupo",
+                btn_shuffle: "🔀 Mezcla (Sortear)",
+                btn_generate: "✨ Crear Grupos",
+                btn_reset: "Limpiar Todo",
+                btn_save: "💾 Guardar",
+                btn_load: "📂 Cargar",
+                btn_champ_mode: "🏟️ Modo Partido",
+                btn_champ_mode_active: "🔙 Ver Lista Simple",
+                legend_title: "Guía de Resultados:",
+                legend_text: "G = Ganar (3 pts) | E = Empatar (1 pt) | P = Perder (0 pts)",
+                empty_title: "Aquí aparecerán los grupos",
+                empty_msg: "Ingresa los datos y presiona \"Crear Grupos\".",
+                msg_shuffle_success: "¡Lista mezclada!",
+                msg_warning_min: "Necesitas al menos 2 participantes.",
+                msg_warning_missing: "Faltan <strong>{count}</strong> para grupos completos.",
+                msg_success_groups: "{count} grupos creados.",
+                msg_no_data: "Ingresa al menos un participante.",
+                msg_saved: "Archivo JSON descargado correctamente.",
+                msg_loaded: "Torneo restaurado con éxito.",
+                msg_loaded_generate: "Lista cargada. Genera los grupos de nuevo.",
+                msg_error_file: "Error al leer el archivo.",
+                msg_confirm_reset: "¿Estás seguro de borrar todo?",
+                msg_champ_active: "Modo Partido activado.",
+                th_pos: "#",
+                th_player: "Participante",
+                th_pts: "Pts",
+                group_prefix: "Grupo",
+                // ✅ NUEVO
+                label_image_format: "Formato de Imagen",
+                btn_export_image: "📸 Exportar Imagen",
+                msg_exporting: "Generando imagen, por favor espera...",
+                msg_exported: "¡Imagen exportada correctamente!",
+                msg_export_error: "Error al exportar la imagen.",
+                msg_no_groups_export: "Primero genera los grupos para exportar."
+            },
+            en: {
+                app_title: "🏆 Group Stage Generator",
+                app_subtitle: "Paste, shuffle, generate, customize colors, save and play matches.",
+                label_participants: "Participants List",
+                hint_participants: "One participant per line.",
+                placeholder_participants: "Paste list here...\nPlayer 1\nPlayer 2\nPlayer 3\n...",
+                label_group_size: "Participants per Group",
+                btn_shuffle: "🔀 Shuffle",
+                btn_generate: "✨ Create Groups",
+                btn_reset: "Reset All",
+                btn_save: "💾 Save",
+                btn_load: "📂 Load",
+                btn_champ_mode: "🏟️ Match Mode",
+                btn_champ_mode_active: "🔙 Simple View",
+                legend_title: "Results Guide:",
+                legend_text: "W = Win (3 pts) | D = Draw (1 pt) | L = Loss (0 pts)",
+                empty_title: "Groups will appear here",
+                empty_msg: "Enter data and click \"Create Groups\".",
+                msg_shuffle_success: "List shuffled!",
+                msg_warning_min: "You need at least 2 participants.",
+                msg_warning_missing: "Missing <strong>{count}</strong> for full groups.",
+                msg_success_groups: "{count} groups created.",
+                msg_no_data: "Enter at least one participant.",
+                msg_saved: "JSON file downloaded successfully.",
+                msg_loaded: "Tournament restored successfully.",
+                msg_loaded_generate: "List loaded. Generate groups again.",
+                msg_error_file: "Error reading file.",
+                msg_confirm_reset: "Are you sure you want to delete everything?",
+                msg_champ_active: "Match mode activated.",
+                th_pos: "#",
+                th_player: "Participant",
+                th_pts: "Pts",
+                group_prefix: "Group",
+                // ✅ NUEVO
+                label_image_format: "Image Format",
+                btn_export_image: "📸 Export Image",
+                msg_exporting: "Generating image, please wait...",
+                msg_exported: "Image exported successfully!",
+                msg_export_error: "Error exporting the image.",
+                msg_no_groups_export: "Generate groups first to export."
+            },
+            zh: {
+                app_title: "🏆 小组赛生成器",
+                app_subtitle: "粘贴、混合、生成、自定义颜色、保存并比赛。",
+                label_participants: "参与者列表",
+                hint_participants: "每行一个参与者。",
+                placeholder_participants: "在此处粘贴列表...\n选手 1\n选手 2\n选手 3\n...",
+                label_group_size: "每组人数",
+                btn_shuffle: "🔀 随机排序",
+                btn_generate: "✨ 生成分组",
+                btn_reset: "重置所有",
+                btn_save: "💾 保存",
+                btn_load: "📂 加载",
+                btn_champ_mode: "🏟️ 比赛模式",
+                btn_champ_mode_active: "🔙 简单列表",
+                legend_title: "结果指南:",
+                legend_text: "W = 胜 (3分) | D = 平 (1分) | L = 负 (0分)",
+                empty_title: "分组将显示在这里",
+                empty_msg: "输入数据并点击“生成分组”。",
+                msg_shuffle_success: "列表已打乱！",
+                msg_warning_min: "至少需要2名参与者。",
+                msg_warning_missing: "缺少 <strong>{count}</strong> 人以填满所有组。",
+                msg_success_groups: "已创建 {count} 个组。",
+                msg_no_data: "请输入至少一名参与者。",
+                msg_saved: "JSON文件下载成功。",
+                msg_loaded: "比赛已成功恢复。",
+                msg_loaded_generate: "列表已加载。请重新生成分组。",
+                msg_error_file: "读取文件时出错。",
+                msg_confirm_reset: "确定要清除所有内容吗？",
+                msg_champ_active: "比赛模式已激活。",
+                th_pos: "#",
+                th_player: "参与者",
+                th_pts: "积分",
+                group_prefix: "组",
+                // ✅ NUEVO
+                label_image_format: "图片格式",
+                btn_export_image: "📸 导出图片",
+                msg_exporting: "正在生成图片，请稍候...",
+                msg_exported: "图片导出成功！",
+                msg_export_error: "导出图片时出错。",
+                msg_no_groups_export: "请先生成分组后再导出。"
+            },
+            ja: {
+                app_title: "🏆 グループステージ ジェネレーター",
+                app_subtitle: "貼り付け、シャッフル、生成、色のカスタマイズ、保存、そして対戦。",
+                label_participants: "参加者リスト",
+                hint_participants: "1行につき1名の参加者。",
+                placeholder_participants: "リストをここに貼り付け...\n選手 1\n選手 2\n選手 3\n...",
+                label_group_size: "グループごとの人数",
+                btn_shuffle: "🔀 シャッフル",
+                btn_generate: "✨ グループ作成",
+                btn_reset: "すべてリセット",
+                btn_save: "💾 保存",
+                btn_load: "📂 読み込み",
+                btn_champ_mode: "🏟️ 試合モード",
+                btn_champ_mode_active: "🔙 シンプル表示",
+                legend_title: "結果ガイド:",
+                legend_text: "W = 勝ち (3pt) | D = 引き分け (1pt) | L = 負け (0pt)",
+                empty_title: "グループはここに表示されます",
+                empty_msg: "データを入力して「グループ作成」を押してください。",
+                msg_shuffle_success: "リストをシャッフルしました！",
+                msg_warning_min: "参加者は少なくとも2名必要です。",
+                msg_warning_missing: "グループを埋めるには <strong>{count}</strong> 人足りません。",
+                msg_success_groups: "{count} グループ作成しました。",
+                msg_no_data: "少なくとも1名の参加者を入力してください。",
+                msg_saved: "JSONファイルをダウンロードしました。",
+                msg_loaded: "トーナメントを復元しました。",
+                msg_loaded_generate: "リストを読み込みました。もう一度グループを作成してください。",
+                msg_error_file: "ファイルの読み込みエラー。",
+                msg_confirm_reset: "本当にすべて削除しますか？",
+                msg_champ_active: "試合モードが有効になりました。",
+                th_pos: "#",
+                th_player: "参加者",
+                th_pts: "pts",
+                group_prefix: "グループ",
+                // ✅ NUEVO
+                label_image_format: "画像フォーマット",
+                btn_export_image: "📸 画像をエクスポート",
+                msg_exporting: "画像を生成中です。お待ちください...",
+                msg_exported: "画像のエクスポートに成功しました！",
+                msg_export_error: "画像のエクスポート中にエラーが発生しました。",
+                msg_no_groups_export: "先にグループを生成してください。"
+            },
+            ko: {
+                app_title: "🏆 조별리그 생성기",
+                app_subtitle: "붙여넣기, 섞기, 생성, 색상 사용자 정의, 저장 및 경기 진행.",
+                label_participants: "참가자 목록",
+                hint_participants: "줄당 참가자 한 명.",
+                placeholder_participants: "여기에 목록 붙여넣기...\n플레이어 1\n플레이어 2\n플레이어 3\n...",
+                label_group_size: "그룹당 참가자 수",
+                btn_shuffle: "🔀 섞기",
+                btn_generate: "✨ 그룹 생성",
+                btn_reset: "모두 지우기",
+                btn_save: "💾 저장",
+                btn_load: "📂 불러오기",
+                btn_champ_mode: "🏟️ 경기 모드",
+                btn_champ_mode_active: "🔙 간단 보기",
+                legend_title: "결과 가이드:",
+                legend_text: "W = 승 (3점) | D = 무 (1점) | L = 패 (0점)",
+                empty_title: "그룹이 여기에 표시됩니다",
+                empty_msg: "데이터를 입력하고 \"그룹 생성\"을 누르세요.",
+                msg_shuffle_success: "목록이 섞였습니다!",
+                msg_warning_min: "최소 2명의 참가자가 필요합니다.",
+                msg_warning_missing: "완전한 그룹을 만들려면 <strong>{count}</strong>명이 부족합니다.",
+                msg_success_groups: "{count}개의 그룹이 생성되었습니다.",
+                msg_no_data: "최소 한 명의 참가자를 입력하세요.",
+                msg_saved: "JSON 파일이 성공적으로 다운로드되었습니다.",
+                msg_loaded: "토너먼트가 성공적으로 복원되었습니다.",
+                msg_loaded_generate: "목록이 로드되었습니다. 그룹을 다시 생성하세요.",
+                msg_error_file: "파일 읽기 오류.",
+                msg_confirm_reset: "모든 내용을 삭제하시겠습니까?",
+                msg_champ_active: "경기 모드가 활성화되었습니다.",
+                th_pos: "#",
+                th_player: "참가자",
+                th_pts: "점수",
+                group_prefix: "조",
+                // ✅ NUEVO
+                label_image_format: "이미지 형식",
+                btn_export_image: "📸 이미지 내보내기",
+                msg_exporting: "이미지 생성 중입니다. 잠시만 기다려주세요...",
+                msg_exported: "이미지가 성공적으로 내보내졌습니다!",
+                msg_export_error: "이미지 내보내기 중 오류가 발생했습니다.",
+                msg_no_groups_export: "먼저 그룹을 생성한 후 내보내세요."
+            }
+        };
+
+        // Función auxiliar para obtener traducción
+        function t(key, replacements = {}) {
+            let text = translations[currentLang][key] || translations['es'][key] || key;
+            
+            // Reemplazar variables dinámicas (ej: {count})
+            for (const [k, v] of Object.entries(replacements)) {
+                text = text.replace(`{${k}}`, v);
+            }
+            return text;
+        }
+
+        // Función para actualizar idiomas en el DOM estático
+        function updateLanguageUI(lang) {
+            currentLang = lang;
+            document.documentElement.lang = lang;
+
+            // Actualizar elementos estáticos con data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = t(key);
+            });
+
+            // Actualizar placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+
+            // Actualizar títulos de botones (tooltips) si es necesario
+            btnShuffle.title = t('msg_shuffle_success'); // Simplificado para el ejemplo
+
+            // Si los grupos ya están generados, volver a renderizar para actualizar cabeceras y nombres
+            const existingCards = document.querySelectorAll('.group-card');
+            if (existingCards.length > 0) {
+                // Disparamos la generación de nuevo con los datos actuales en memoria
+                // Para esto necesitamos obtener los datos actuales del DOM (similar a cómo hace Save)
+                regenerateCurrentGroupsUI();
+            }
+
+            // Actualizar leyenda
+            const legendTitle = document.querySelector('#championshipLegend strong');
+            const legendText = document.querySelector('#championshipLegend span');
+            if(legendTitle) legendTitle.innerText = t('legend_title');
+            if(legendText) legendText.innerText = t('legend_text');
+
+            // Actualizar Empty State
+            const emptyTitle = document.querySelector('.empty-state h3');
+            const emptyMsg = document.querySelector('.empty-state p');
+            if(emptyTitle) emptyTitle.innerText = t('empty_title');
+            if(emptyMsg) emptyMsg.innerText = t('empty_msg');
+            
+            // Actualizar botón de modo campeonato
+            updateChampButtonUI();
+        }
+
+        function updateChampButtonUI() {
+            if (isChampionshipMode) {
+                btnChampionshipMode.innerHTML = t('btn_champ_mode_active');
+            } else {
+                btnChampionshipMode.innerHTML = t('btn_champ_mode');
+            }
+        }
+
+        function regenerateCurrentGroupsUI() {
+            // Extrae datos actuales del DOM para redibujar con el nuevo idioma
+            const groupsCards = document.querySelectorAll('.group-card');
+            let savedGroups = [];
+
+            if (groupsCards.length > 0) {
+                groupsCards.forEach(card => {
+                    const title = card.querySelector('.group-title').innerText; // Mantenemos el texto tal cual o decodificamos
+                    const color = card.querySelector('.group-color-picker').value;
+                    const members = [];
+                    
+                    const rows = card.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        const name = row.querySelector('.player-name').innerText;
+                        const selects = row.querySelectorAll('.result-select');
+                        
+                        let results = [0, 0, 0];
+                        let total = 0;
+
+                        if (selects.length > 0) {
+                            results = Array.from(selects).map(s => parseInt(s.value));
+                            const totalCell = row.querySelector('.total-pts');
+                            if (totalCell) total = parseInt(totalCell.innerText);
+                        }
+
+                        members.push({
+                            name: name,
+                            results: results,
+                            total: total
+                        });
+                    });
+                    
+                    savedGroups.push({ name: title, color: color, members: members });
+                });
+                
+                // Renderizar usando la función existente pero forzando modo restore
+                renderGroups(savedGroups, true);
+            }
+        }
+
+        // ===========================
+        // LÓGICA ORIGINAL
+        // ===========================
+
+        // Referencias al DOM
+        const textarea = document.getElementById('participantsInput');
+        const groupSizeInput = document.getElementById('groupSize');
+        const btnShuffle = document.getElementById('btnShuffle');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnReset = document.getElementById('btnReset');
+        const btnSave = document.getElementById('btnSave');
+        const btnLoad = document.getElementById('btnLoad');
+        const fileInput = document.getElementById('fileInput');
+        const btnChampionshipMode = document.getElementById('btnChampionshipMode');
+        const notificationArea = document.getElementById('notificationArea');
+        const groupsContainer = document.getElementById('groupsContainer');
+        const liveCountDisplay = document.getElementById('liveCount');
+        const langSelector = document.getElementById('langSelector');
+        // ✅ NUEVO: Referencias para exportación de imagen
+        const btnExportImage = document.getElementById('btnExportImage');
+        const imageFormatSelect = document.getElementById('imageFormat');
+
+        // Estado del Modo Partido
+        let isChampionshipMode = false;
+
+        // Paleta de colores expandida y aleatoria
+        const colorPalette = [
+            '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6',
+            '#f97316', '#06b6d4', '#84cc16', '#d946ef', '#f43f5e', '#0ea5e9', '#22c55e', '#eab308'
+        ];
+
+        function getRandomColor() {
+            return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+        }
+
+        // --- SISTEMA DE NOTIFICACIONES ---
+        function showNotification(message, type = 'info') {
+            // Note: message is expected to be pre-translated HTML string for complex cases
+            // or we can pass a key here. To respect original code which builds HTML strings:
+            notificationArea.innerHTML = `<div class="notification ${type}">${message}</div>`;
+            if(type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    const notif = notificationArea.querySelector('.notification');
+                    if(notif) notif.style.display = 'none';
+                }, 5000);
+            }
+        }
+        function clearNotification() { notificationArea.innerHTML = ''; }
+
+        // --- UTILIDADES ---
+        function getParticipants() {
+            return textarea.value.split('\n').map(p => p.trim()).filter(p => p !== '');
+        }
+        function updateCounter() {
+            liveCountDisplay.innerText = getParticipants().length;
+        }
+        textarea.addEventListener('input', updateCounter);
+
+        // --- MEZCLA ---
+        function shuffleArray(array) {
+            const arr = [...array]; 
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        function handleShuffle() {
+            const participants = getParticipants();
+            if (participants.length < 2) { showNotification(t('msg_warning_min'), "warning"); return; }
+            const shuffled = shuffleArray(participants);
+            textarea.value = shuffled.join('\n');
+            textarea.style.borderColor = "var(--primary)";
+            setTimeout(() => { textarea.style.borderColor = "var(--border-color)"; }, 300);
+            updateCounter();
+            showNotification(t('msg_shuffle_success'), "success");
+        }
+
+        // --- MODO PARTIDO ---
+        function toggleChampionshipMode() {
+            isChampionshipMode = !isChampionshipMode;
+            
+            // Alternar clase en body para controlar visibilidad global de leyenda
+            if (isChampionshipMode) {
+                document.body.classList.add('mode-championship-active');
+                btnChampionshipMode.classList.add('active');
+                updateChampButtonUI();
+                showNotification(t('msg_champ_active'), "info");
+            } else {
+                document.body.classList.remove('mode-championship-active');
+                btnChampionshipMode.classList.remove('active');
+                updateChampButtonUI();
+            }
+
+            // Actualizar clases de las tablas
+            const cards = document.querySelectorAll('.group-card');
+            cards.forEach(card => {
+                if (isChampionshipMode) {
+                    card.classList.add('mode-championship');
+                    ensureChampionshipElements(card);
+                } else {
+                    card.classList.remove('mode-championship');
+                }
+            });
+        }
+
+        function ensureChampionshipElements(card) {
+            const table = card.querySelector('table');
+            const thead = table.querySelector('thead tr');
+            const tbody = table.querySelector('tbody');
+            
+            // 1. Cabeceras
+            // Las cabeceras ahora son dinámicas por idioma, aseguramos que existan
+            // Nota: Como regeneramos la tabla entera en renderGroups, esto es mayormente seguridad
+            if (!thead.querySelector('.championship-header')) {
+                // Inyectamos cabeceras estándar (R1, R2, etc son universales, Pts se traduce en renderGroups)
+                thead.innerHTML += `
+                    <th class="championship-header">R1</th>
+                    <th class="championship-header">R2</th>
+                    <th class="championship-header">R3</th>
+                    <th class="championship-header">${t('th_pts')}</th>
+                `;
+            } else {
+                // Si cambiamos idioma y ya existen, actualizar "Pts"
+                const ptsHeader = thead.querySelectorAll('.championship-header')[3];
+                if(ptsHeader) ptsHeader.innerText = t('th_pts');
+            }
+
+            // 2. Filas (Inputs)
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (row.querySelectorAll('.championship-col').length === 0) {
+                    // Opciones G, E, P / W, D, L (mantenemos las letras cortas por espacio)
+                    // El usuario entiende el contexto por la leyenda traducida
+                    const options = `
+                        <option value="0">-</option>
+                        <option value="3">W</option>
+                        <option value="1">D</option>
+                        <option value="0">L</option>
+                    `;
+                    
+                    row.innerHTML += `
+                        <td class="championship-col"><select class="result-select" onchange="updateTable(this)">${options}</select></td>
+                        <td class="championship-col"><select class="result-select" onchange="updateTable(this)">${options}</select></td>
+                        <td class="championship-col"><select class="result-select" onchange="updateTable(this)">${options}</select></td>
+                        <td class="championship-col total-pts">0</td>
+                    `;
+                }
+            });
+        }
+
+        // --- ACTUALIZAR PUNTUACIÓN Y REORDENAR ---
+        window.updateTable = function(changedSelect) {
+            if (!isChampionshipMode) return;
+
+            const row = changedSelect.closest('tr');
+            const tbody = row.closest('tbody');
+            const selects = row.querySelectorAll('.result-select');
+            
+            let total = 0;
+            selects.forEach(sel => total += parseInt(sel.value));
+            
+            row.querySelector('.total-pts').innerText = total;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort((a, b) => {
+                const ptsA = parseInt(a.querySelector('.total-pts').innerText);
+                const ptsB = parseInt(b.querySelector('.total-pts').innerText);
+                return ptsB - ptsA;
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        // --- GENERACIÓN DE GRUPOS ---
+        function handleGenerate() {
+            clearNotification();
+            const participants = getParticipants();
+            const size = parseInt(groupSizeInput.value) || 4;
+
+            if (participants.length === 0) {
+                showNotification(t('msg_no_data'), "warning");
+                groupsContainer.innerHTML = `<div class="empty-state"><h3 data-i18n="empty_title">${t('empty_title')}</h3><p data-i18n="empty_msg">${t('empty_msg')}</p></div>`;
+                btnChampionshipMode.style.display = 'none';
+                return;
+            }
+
+            btnChampionshipMode.style.display = 'flex'; 
+
+            const numGroups = Math.ceil(participants.length / size);
+            const missing = (numGroups * size) - participants.length;
+
+            if (missing > 0) showNotification(t('msg_warning_missing', {count: missing}), "warning");
+            else showNotification(t('msg_success_groups', {count: numGroups}), "success");
+
+            const groups = [];
+            for (let i = 0; i < numGroups; i++) {
+                groups.push(participants.slice(i * size, (i * size) + size));
+            }
+            renderGroups(groups);
+        }
+
+        // --- CAMBIO DE COLOR ---
+        function handleGroupColorChange(event) {
+            const picker = event.target;
+            const color = picker.value;
+            const card = picker.closest('.group-card');
+            const title = card.querySelector('.group-title');
+            card.style.borderTopColor = color;
+            title.style.color = color;
+        }
+
+        // --- RENDERIZADO (MODIFICADO PARA IDIOMAS) ---
+        function renderGroups(groupsData, isRestore = false) {
+            groupsContainer.innerHTML = '';
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            groupsData.forEach((groupData, index) => {
+                let groupName, groupColor, members;
+
+                if (isRestore) {
+                    groupName = groupData.name;
+                    groupColor = groupData.color;
+                    members = groupData.members;
+                } else {
+                    groupName = `${t('group_prefix')} ${letters[index % letters.length]}`;
+                    groupColor = getRandomColor(); 
+                    members = groupData;
+                }
+
+                // Helper para generar opciones del select (W/D/L)
+                const getOptions = (val) => {
+                    const v = parseInt(val);
+                    return `
+                        <option value="0" ${v === 0 ? 'selected' : ''}>-</option>
+                        <option value="3" ${v === 3 ? 'selected' : ''}>W</option>
+                        <option value="1" ${v === 1 ? 'selected' : ''}>D</option>
+                        <option value="0" ${v === 0 ? 'selected' : ''}>L</option>
+                    `;
+                };
+
+                // Generar filas
+                let tableRows = members.map((player, pIndex) => {
+                    let name = player;
+                    let r1 = 0, r2 = 0, r3 = 0, pts = 0;
+                    
+                    if (typeof player === 'object' && player !== null) {
+                        name = player.name;
+                        if (player.results) {
+                            r1 = player.results[0] || 0;
+                            r2 = player.results[1] || 0;
+                            r3 = player.results[2] || 0;
+                        }
+                        pts = player.total || 0;
+                    }
+
+                    let rowHtml = `<tr><td>${pIndex + 1}</td><td class="player-name">${name}</td>`;
+
+                    const hasResults = (typeof player === 'object' && player.results);
+
+                    if (hasResults) {
+                        rowHtml += `
+                            <td class="championship-col"><select class="result-select" onchange="updateTable(this)">${getOptions(r1)}</select></td>
+                            <td class="championship-col"><select class="result-select" onchange="updateTable(this)">${getOptions(r2)}</select></td>
+                            <td class="championship-col"><select class="result-select" onchange="updateTable(this)">${getOptions(r3)}</select></td>
+                            <td class="championship-col total-pts">${pts}</td>
+                        `;
+                    }
+
+                    rowHtml += `</tr>`;
+                    return rowHtml;
+                }).join('');
+                
+                const modeClass = isChampionshipMode ? 'mode-championship' : '';
+
+                const html = `
+                    <article class="group-card ${modeClass}" style="border-top-color: ${groupColor}">
+                        <div class="group-header">
+                            <span class="group-title" style="color: ${groupColor}">${groupName}</span>
+                            <div class="color-picker-wrapper" title="Cambiar color">
+                                <input type="color" class="group-color-picker" value="${groupColor}">
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr>
+                                    <th width="20%">${t('th_pos')}</th>
+                                    <th>${t('th_player')}</th>
+                                    <th class="championship-header">R1</th>
+                                    <th class="championship-header">R2</th>
+                                    <th class="championship-header">R3</th>
+                                    <th class="championship-header">${t('th_pts')}</th>
+                                </tr></thead>
+                                <tbody>${tableRows}</tbody>
+                            </table>
+                        </div>
+                    </article>
+                `;
+                groupsContainer.innerHTML += html;
+            });
+
+            if (isChampionshipMode) {
+                const cards = document.querySelectorAll('.group-card');
+                cards.forEach(card => ensureChampionshipElements(card));
+            }
+
+            document.querySelectorAll('.group-color-picker').forEach(picker => {
+                picker.addEventListener('input', handleGroupColorChange);
+            });
+        }
+
+        // --- GUARDADO ---
+        btnSave.addEventListener('click', () => {
+            const participants = textarea.value;
+            const groupSize = groupSizeInput.value;
+            
+            const groupsCards = document.querySelectorAll('.group-card');
+            let savedGroups = [];
+
+            if (groupsCards.length > 0) {
+                groupsCards.forEach(card => {
+                    const title = card.querySelector('.group-title').innerText;
+                    const color = card.querySelector('.group-color-picker').value;
+                    const members = [];
+                    
+                    const rows = card.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        const name = row.querySelector('.player-name').innerText;
+                        const selects = row.querySelectorAll('.result-select');
+                        
+                        let results = [0, 0, 0];
+                        let total = 0;
+
+                        if (selects.length > 0) {
+                            results = Array.from(selects).map(s => parseInt(s.value));
+                            const totalCell = row.querySelector('.total-pts');
+                            if (totalCell) total = parseInt(totalCell.innerText);
+                        }
+
+                        members.push({
+                            name: name,
+                            results: results,
+                            total: total
+                        });
+                    });
+                    
+                    savedGroups.push({ name: title, color: color, members: members });
+                });
+            }
+
+            const state = {
+                timestamp: new Date().toISOString(),
+                participantsRaw: participants,
+                groupSize: groupSize,
+                groups: savedGroups
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "torneo_guardado.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            
+            showNotification(t('msg_saved'), "success");
+        });
+
+        // --- CARGA ---
+        btnLoad.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const state = JSON.parse(e.target.result);
+                    if (!state.participantsRaw) throw new Error("Formato inválido");
+
+                    textarea.value = state.participantsRaw;
+                    groupSizeInput.value = state.groupSize || 4;
+                    updateCounter();
+
+                    if (state.groups && state.groups.length > 0) {
+                        let hasChampionshipData = false;
+                        if (state.groups[0].members.length > 0 && typeof state.groups[0].members[0] === 'object') {
+                            hasChampionshipData = true;
+                        }
+
+                        if (hasChampionshipData) {
+                            if (!isChampionshipMode) {
+                                toggleChampionshipMode();
+                            }
+                            isChampionshipMode = true; 
+                            document.body.classList.add('mode-championship-active');
+                            btnChampionshipMode.classList.add('active');
+                            updateChampButtonUI();
+                        }
+
+                        renderGroups(state.groups, true);
+                        showNotification(t('msg_loaded'), "success");
+                        
+                        btnChampionshipMode.style.display = 'flex'; 
+                    } else {
+                        groupsContainer.innerHTML = `<div class="empty-state"><h3 data-i18n="empty_title">${t('empty_title')}</h3><p data-i18n="empty_msg">${t('empty_msg')}</p></div>`;
+                        showNotification(t('msg_loaded_generate'), "info");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showNotification(t('msg_error_file'), "warning");
+                }
+                fileInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        // --- RESET ---
+        function handleReset() {
+            if(confirm(t('msg_confirm_reset'))) {
+                textarea.value = '';
+                groupSizeInput.value = 4;
+                updateCounter();
+                groupsContainer.innerHTML = `<div class="empty-state"><h3 data-i18n="empty_title">${t('empty_title')}</h3><p data-i18n="empty_msg">${t('empty_msg')}</p></div>`;
+                btnChampionshipMode.style.display = 'none';
+                isChampionshipMode = false;
+                btnChampionshipMode.classList.remove('active');
+                updateChampButtonUI();
+                
+                document.body.classList.remove('mode-championship-active');
+                
+                clearNotification();
+            }
+        }
+
+        // ===========================
+// ✅ EXPORTACIÓN A IMAGEN (CORREGIDA)
+// ===========================
+async function handleExportImage() {
+    const cards = document.querySelectorAll('.group-card');
+    if (cards.length === 0) {
+        showNotification(t('msg_no_groups_export'), "warning");
+        return;
+    }
+
+    // Feedback visual: deshabilitar botón mientras se procesa
+    const originalText = btnExportImage.innerHTML;
+    btnExportImage.disabled = true;
+    btnExportImage.innerHTML = '⏳ ' + t('msg_exporting');
+    showNotification(t('msg_exporting'), "info");
+
+    try {
+        const format = imageFormatSelect.value; // png | jpeg | webp
+        const mimeType = format === 'jpeg' ? 'image/jpeg'
+                       : format === 'webp' ? 'image/webp'
+                       : 'image/png';
+        const ext = format === 'jpeg' ? 'jpg' : format;
+
+        // Pequeña pausa para que el DOM se estabilice
+        await new Promise(r => setTimeout(r, 100));
+
+        // Ancho objetivo de captura: suficientemente amplio para mostrar varias columnas
+        const TARGET_WIDTH = 1200;
+
+        const canvas = await html2canvas(groupsContainer, {
+            backgroundColor: getComputedStyle(document.body).backgroundColor || '#f1f5f9',
+            scale: Math.max(2, window.devicePixelRatio || 1), // alta calidad
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+
+            // 👇 CLAVE 1: forzar ancho amplio (antes usábamos scrollWidth, que daba muy poco)
+            width: TARGET_WIDTH,
+            windowWidth: TARGET_WIDTH,
+
+            // 👇 CLAVE 2: modificar sólo la copia del DOM usada para el render
+            onclone: (clonedDoc) => {
+                const clonedContainer = clonedDoc.getElementById('groupsContainer');
+                if (!clonedContainer) return;
+
+                // Forzar layout ancho tipo "escritorio" aunque el usuario esté en móvil
+                clonedContainer.style.width = TARGET_WIDTH + 'px';
+                clonedContainer.style.maxWidth = 'none';
+                clonedContainer.style.padding = '24px';
+                clonedContainer.style.backgroundColor = '#f1f5f9';
+                clonedContainer.style.display = 'grid';
+                // 2 columnas se ven muy bien; si hay muchos grupos, con minmax se acomodan solos
+                clonedContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(520px, 1fr))';
+                clonedContainer.style.gap = '1.5rem';
+
+                // Quitar el scroll horizontal de las tablas para que se vea TODO (incluida la col. PTS)
+                clonedContainer.querySelectorAll('.table-wrapper').forEach(w => {
+                    w.style.overflow = 'visible';
+                    w.style.width = '100%';
+                });
+
+                // Asegurar que las tablas no tengan min-width que las haga desbordar
+                clonedContainer.querySelectorAll('table').forEach(tbl => {
+                    tbl.style.minWidth = '0';
+                    tbl.style.width = '100%';
+                    tbl.style.tableLayout = 'auto';
+                });
+
+                // Compactar un poco celdas/nombres para que nada se amontone ni se corte
+                clonedContainer.querySelectorAll('th, td').forEach(cell => {
+                    cell.style.padding = '0.55rem 0.6rem';
+                    cell.style.fontSize = '0.85rem';
+                });
+                clonedContainer.querySelectorAll('.player-name').forEach(n => {
+                    n.style.whiteSpace = 'normal';
+                    n.style.wordBreak = 'break-word';
+                });
+
+                // Las flechitas del input de color no aportan en la imagen: las ocultamos
+                clonedContainer.querySelectorAll('.color-picker-wrapper').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        });
+
+        // Convertir al formato elegido
+        const dataUrl = canvas.toDataURL(mimeType, 0.95);
+
+        // Nombre de archivo con timestamp
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        const filename = `fase_de_grupos_${stamp}.${ext}`;
+
+        // Descargar
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        showNotification(t('msg_exported'), "success");
+    } catch (err) {
+        console.error(err);
+        showNotification(t('msg_export_error'), "warning");
+    } finally {
+        // Restaurar botón
+        btnExportImage.disabled = false;
+        btnExportImage.innerHTML = originalText;
+    }
+}
+
+btnExportImage.addEventListener('click', handleExportImage);
+
+        // Event Listeners
+        btnShuffle.addEventListener('click', handleShuffle);
+        btnGenerate.addEventListener('click', handleGenerate);
+        btnReset.addEventListener('click', handleReset);
+        btnChampionshipMode.addEventListener('click', toggleChampionshipMode);
+        
+        // Listener para cambio de idioma
+        langSelector.addEventListener('change', (e) => {
+            updateLanguageUI(e.target.value);
+        });
+        
+        // Inicio
+        updateLanguageUI('es'); // Inicializar en español
+        updateCounter();
+    </script>
+</body>
+</html>
