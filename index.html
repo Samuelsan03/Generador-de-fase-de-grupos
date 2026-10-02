@@ -1041,7 +1041,16 @@ select#imageFormat:hover {
                 return ptsB - ptsA;
             });
 
+            // Vuelve a insertar las filas en el nuevo orden
             rows.forEach(r => tbody.appendChild(r));
+            
+            // ✅ NUEVO: Actualizar los números de la primera columna después de ordenar
+            rows.forEach((r, index) => {
+                const positionCell = r.querySelector('td:first-child');
+                if (positionCell) {
+                    positionCell.innerText = index + 1; // Actualiza el 1, 2, 3, 4...
+                }
+            });
         }
 
         // --- GENERACIÓN DE GRUPOS ---
